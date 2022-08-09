@@ -16,7 +16,7 @@ var (
 	ErrShapeNotFound = errors.New("Couldn't remove shape from SpatialHash; not found")
 )
 
-// Shape base
+// Shape interface. It's probably not needed but it keeps code more readable.
 type Shape interface {
 	GetPosition() *Point // get the position
 	GetBounds() (float64, float64, float64, float64)
@@ -45,8 +45,8 @@ type CircleShape struct {
 	SpatialHash *SpatialHash
 }
 
-// SquareShape shape
-type SquareShape struct {
+// RectangleShape shape
+type RectangleShape struct {
 	// Center point
 	Pos           *Point
 	Width, Height float64
@@ -124,6 +124,50 @@ func (s *SpatialHash) Remove(shape Shape) error {
 	return ErrShapeNotFound
 }
 
+// GetCollisionCandidates returns a list of all shapes in the same cells as shape
+func (s *SpatialHash) GetCollisionCandidates(shape Shape) []Shape {
+	shapesMap := make(map[Shape]bool)
+	if cells, ok := s.Backref[shape]; ok {
+		for _, cell := range cells {
+			for _, sh := range cell.Shapes {
+				shapesMap[sh] = true
+			}
+		}
+	}
+	delete(shapesMap, shape)
+	shapes := make([]Shape, len(shapesMap))
+	for k := range shapesMap {
+		shapes = append(shapes, k)
+	}
+	return shapes
+}
+
+// CollisionData contains information about the collision
+type CollisionData struct {
+	Other            Shape
+	SeparatingVector Point
+}
+
+// CheckCollisions returns a list of all shapes and their separating vector
+func (s *SpatialHash) CheckCollisions(shape Shape) []CollisionData {
+	collisions := make([]CollisionData, 0)
+	candidates := s.GetCollisionCandidates(shape)
+
+	for _, candidate := range candidates {
+		switch other := candidate.(type) {
+		case *PointShape:
+			_ = other
+		case *RectangleShape:
+		case *CircleShape:
+		default:
+			// TODO error
+		}
+
+	}
+
+	return collisions
+}
+
 // Draw is a debug function. It draws a rectangle for every cell which has had a shape in it at some point.
 func (s *SpatialHash) Draw(surface *ebiten.Image) {
 	for pos, cell := range s.Hash {
@@ -152,7 +196,7 @@ func (po *PointShape) GetPosition() *Point {
 	return po.Pos
 }
 
-// GetBounds returns the Bounds of the SquareShape
+// GetBounds returns the Bounds of the PointShape
 func (po *PointShape) GetBounds() (float64, float64, float64, float64) {
 	return po.Pos.X - 0.5, po.Pos.Y - 0.5, po.Pos.X + 0.5, po.Pos.Y + 0.5
 }
@@ -200,7 +244,7 @@ func (ci *CircleShape) GetPosition() *Point {
 	return ci.Pos
 }
 
-// GetBounds returns the Bounds of the SquareShape
+// GetBounds returns the Bounds of the CircleShape
 func (ci *CircleShape) GetBounds() (float64, float64, float64, float64) {
 	return ci.Pos.X - ci.Radius,
 		ci.Pos.Y - ci.Radius,
@@ -236,9 +280,9 @@ func (ci *CircleShape) GetHash() *SpatialHash {
 	return ci.SpatialHash
 }
 
-// NewSquareShape creates, then adds a new SquareShape to the hash before returning it
-func (s *SpatialHash) NewSquareShape(x, y, w, h float64) *SquareShape {
-	sq := &SquareShape{
+// NewRectangleShape creates, then adds a new RectangleShape to the hash before returning it
+func (s *SpatialHash) NewRectangleShape(x, y, w, h float64) *RectangleShape {
+	sq := &RectangleShape{
 		Pos:    &Point{x, y},
 		Width:  w,
 		Height: h,
@@ -247,21 +291,21 @@ func (s *SpatialHash) NewSquareShape(x, y, w, h float64) *SquareShape {
 	return sq
 }
 
-// GetPosition returns the Point of the SquareShape
-func (sq *SquareShape) GetPosition() *Point {
+// GetPosition returns the Point of the RectangleShape
+func (sq *RectangleShape) GetPosition() *Point {
 	return sq.Pos
 }
 
-// GetBounds returns the Bounds of the SquareShape
-func (sq *SquareShape) GetBounds() (float64, float64, float64, float64) {
+// GetBounds returns the Bounds of the RectangleShape
+func (sq *RectangleShape) GetBounds() (float64, float64, float64, float64) {
 	return sq.Pos.X - sq.Width/2,
 		sq.Pos.Y - sq.Height/2,
 		sq.Pos.X + sq.Width/2,
 		sq.Pos.Y + sq.Height/2
 }
 
-// Move moves the SquareShape by x and y
-func (sq *SquareShape) Move(x, y float64) {
+// Move moves the RectangleShape by x and y
+func (sq *RectangleShape) Move(x, y float64) {
 	sq.Pos.X += x
 	sq.Pos.Y += y
 	hash := sq.GetHash()
@@ -269,8 +313,8 @@ func (sq *SquareShape) Move(x, y float64) {
 	hash.Add(sq)
 }
 
-// MoveTo moves the SquareShape to x and y
-func (sq *SquareShape) MoveTo(x, y float64) {
+// MoveTo moves the RectangleShape to x and y
+func (sq *RectangleShape) MoveTo(x, y float64) {
 	sq.Pos.X = x
 	sq.Pos.Y = y
 	hash := sq.GetHash()
@@ -279,11 +323,11 @@ func (sq *SquareShape) MoveTo(x, y float64) {
 }
 
 // SetHash sets the hash
-func (sq *SquareShape) SetHash(s *SpatialHash) {
+func (sq *RectangleShape) SetHash(s *SpatialHash) {
 	sq.SpatialHash = s
 }
 
 // GetHash gets the hash
-func (sq *SquareShape) GetHash() *SpatialHash {
+func (sq *RectangleShape) GetHash() *SpatialHash {
 	return sq.SpatialHash
 }

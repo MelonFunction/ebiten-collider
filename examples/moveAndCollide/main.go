@@ -18,7 +18,7 @@ var (
 	WindowHeight = 480 * 2
 
 	player *Player
-	wall   *collider.SquareShape
+	wall   *collider.RectangleShape
 	hash   *collider.SpatialHash
 	cursor *collider.PointShape
 
@@ -117,7 +117,7 @@ func main() {
 		Speed: 5,
 	}
 
-	wall = hash.NewSquareShape(
+	wall = hash.NewRectangleShape(
 		float64(WindowWidth)/2-64/2-96,
 		float64(WindowHeight)/2-64/2,
 		32,
