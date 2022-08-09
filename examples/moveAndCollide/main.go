@@ -20,6 +20,7 @@ var (
 	player *Player
 	wall   *collider.SquareShape
 	hash   *collider.SpatialHash
+	cursor *collider.PointShape
 
 	ErrNormalExit = errors.New("Normal exit")
 )
@@ -53,6 +54,9 @@ func (g *Game) Update() error {
 		player.Bounds.Move(0, player.Speed)
 	}
 
+	cx, cy := ebiten.CursorPosition()
+	cursor.MoveTo(float64(cx), float64(cy))
+
 	return nil
 }
 
@@ -78,6 +82,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		wall.Pos.Y-wall.Height/2,
 		wall.Width,
 		wall.Height,
+		red)
+
+	ebitenutil.DrawCircle(
+		screen,
+		cursor.Pos.X,
+		cursor.Pos.Y,
+		5,
 		red)
 }
 
@@ -112,6 +123,8 @@ func main() {
 		32,
 		320,
 	)
+
+	cursor = hash.NewPointShape(0, 0)
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

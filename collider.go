@@ -33,7 +33,7 @@ type Point struct {
 
 // PointShape shape, also used for the hash's cell coordinates
 type PointShape struct {
-	X, Y        float64
+	Pos         *Point
 	SpatialHash *SpatialHash
 }
 
@@ -138,56 +138,51 @@ func (s *SpatialHash) Draw(surface *ebiten.Image) {
 	}
 }
 
-// NewSquareShape creates, then adds a new SquareShape to the hash before returning it
-func (s *SpatialHash) NewSquareShape(x, y, w, h float64) *SquareShape {
-	sq := &SquareShape{
-		Pos:    &Point{x, y},
-		Width:  w,
-		Height: h,
+// NewPointShape creates, then adds a new PointShape to the hash before returning it
+func (s *SpatialHash) NewPointShape(x, y float64) *PointShape {
+	po := &PointShape{
+		Pos: &Point{x, y},
 	}
-	s.Add(sq)
-	return sq
+	s.Add(po)
+	return po
 }
 
-// GetPosition returns the Point of the SquareShape
-func (sq *SquareShape) GetPosition() *Point {
-	return sq.Pos
+// GetPosition returns the Point of the PointShape
+func (po *PointShape) GetPosition() *Point {
+	return po.Pos
 }
 
 // GetBounds returns the Bounds of the SquareShape
-func (sq *SquareShape) GetBounds() (float64, float64, float64, float64) {
-	return sq.Pos.X - sq.Width/2,
-		sq.Pos.Y - sq.Height/2,
-		sq.Pos.X + sq.Width/2,
-		sq.Pos.Y + sq.Height/2
+func (po *PointShape) GetBounds() (float64, float64, float64, float64) {
+	return po.Pos.X - 0.5, po.Pos.Y - 0.5, po.Pos.X + 0.5, po.Pos.Y + 0.5
 }
 
-// Move moves the SquareShape by x and y
-func (sq *SquareShape) Move(x, y float64) {
-	sq.Pos.X += x
-	sq.Pos.Y += y
-	hash := sq.GetHash()
-	hash.Remove(sq)
-	hash.Add(sq)
+// Move moves the PointShape by x and y
+func (po *PointShape) Move(x, y float64) {
+	po.Pos.X += x
+	po.Pos.Y += y
+	hash := po.GetHash()
+	hash.Remove(po)
+	hash.Add(po)
 }
 
-// MoveTo moves the SquareShape to x and y
-func (sq *SquareShape) MoveTo(x, y float64) {
-	sq.Pos.X = x
-	sq.Pos.Y = y
-	hash := sq.GetHash()
-	hash.Remove(sq)
-	hash.Add(sq)
+// MoveTo moves the PointShape to x and y
+func (po *PointShape) MoveTo(x, y float64) {
+	po.Pos.X = x
+	po.Pos.Y = y
+	hash := po.GetHash()
+	hash.Remove(po)
+	hash.Add(po)
 }
 
 // SetHash sets the hash
-func (sq *SquareShape) SetHash(s *SpatialHash) {
-	sq.SpatialHash = s
+func (po *PointShape) SetHash(s *SpatialHash) {
+	po.SpatialHash = s
 }
 
 // GetHash gets the hash
-func (sq *SquareShape) GetHash() *SpatialHash {
-	return sq.SpatialHash
+func (po *PointShape) GetHash() *SpatialHash {
+	return po.SpatialHash
 }
 
 // NewCircleShape creates, then adds a new CircleShape to the hash before returning it
@@ -239,4 +234,56 @@ func (ci *CircleShape) SetHash(s *SpatialHash) {
 // GetHash gets the hash
 func (ci *CircleShape) GetHash() *SpatialHash {
 	return ci.SpatialHash
+}
+
+// NewSquareShape creates, then adds a new SquareShape to the hash before returning it
+func (s *SpatialHash) NewSquareShape(x, y, w, h float64) *SquareShape {
+	sq := &SquareShape{
+		Pos:    &Point{x, y},
+		Width:  w,
+		Height: h,
+	}
+	s.Add(sq)
+	return sq
+}
+
+// GetPosition returns the Point of the SquareShape
+func (sq *SquareShape) GetPosition() *Point {
+	return sq.Pos
+}
+
+// GetBounds returns the Bounds of the SquareShape
+func (sq *SquareShape) GetBounds() (float64, float64, float64, float64) {
+	return sq.Pos.X - sq.Width/2,
+		sq.Pos.Y - sq.Height/2,
+		sq.Pos.X + sq.Width/2,
+		sq.Pos.Y + sq.Height/2
+}
+
+// Move moves the SquareShape by x and y
+func (sq *SquareShape) Move(x, y float64) {
+	sq.Pos.X += x
+	sq.Pos.Y += y
+	hash := sq.GetHash()
+	hash.Remove(sq)
+	hash.Add(sq)
+}
+
+// MoveTo moves the SquareShape to x and y
+func (sq *SquareShape) MoveTo(x, y float64) {
+	sq.Pos.X = x
+	sq.Pos.Y = y
+	hash := sq.GetHash()
+	hash.Remove(sq)
+	hash.Add(sq)
+}
+
+// SetHash sets the hash
+func (sq *SquareShape) SetHash(s *SpatialHash) {
+	sq.SpatialHash = s
+}
+
+// GetHash gets the hash
+func (sq *SquareShape) GetHash() *SpatialHash {
+	return sq.SpatialHash
 }
