@@ -147,14 +147,14 @@ func main() {
 	wall = hash.NewRectangleShape(
 		float64(WindowWidth)/2-64/2-96,
 		float64(WindowHeight)/2-64/2,
-		32,
+		128,
 		320,
 	)
 	wall2 = hash.NewRectangleShape(
-		float64(WindowWidth)/2-64/2-320,
+		float64(WindowWidth)/2-64/2-320-65,
 		float64(WindowHeight)/2-64/2,
 		320,
-		32,
+		128,
 	)
 
 	cursor = hash.NewRectangleShape(0, 0, 1, 1)
