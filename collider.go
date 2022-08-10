@@ -401,5 +401,5 @@ func (re *RectangleShape) GetHash() *SpatialHash {
 
 // NewPointShape creates, then adds a new RectangleShape to the hash before returning it
 func (s *SpatialHash) NewPointShape(x, y float64) *PointShape {
-	return &PointShape{s.NewRectangleShape(0, 0, 0, 0)}
+	return &PointShape{s.NewRectangleShape(x, y, 0, 0)}
 }
