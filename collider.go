@@ -149,8 +149,8 @@ func collisionRectRect(r1, r2 *RectangleShape) *Vector {
 	r1Left, r1Up, r1Right, r1Down := r1.GetBounds()
 	r2Left, r2Up, r2Right, r2Down := r2.GetBounds()
 
-	if !(((r1Right > r2Left && r1Right < r2Right) || (r1Left > r2Left && r1Left < r2Right) || (r1Left > r2Left && r1Right < r2Right) || (r2Left > r1Left && r2Right < r1Right)) &&
-		((r1Up < r2Down && r1Up > r2Up) || (r1Down < r2Down && r1Down > r2Up) || (r1Up > r2Up && r1Down < r2Down) || (r2Up > r1Up && r2Down < r1Down))) {
+	if !(((r1Right >= r2Left && r1Right <= r2Right) || (r1Left >= r2Left && r1Left <= r2Right) || (r1Left >= r2Left && r1Right <= r2Right) || (r2Left >= r1Left && r2Right <= r1Right)) &&
+		((r1Up <= r2Down && r1Up >= r2Up) || (r1Down <= r2Down && r1Down >= r2Up) || (r1Up >= r2Up && r1Down <= r2Down) || (r2Up >= r1Up && r2Down <= r1Down))) {
 
 		return &Vector{0, 0}
 	}
