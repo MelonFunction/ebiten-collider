@@ -161,7 +161,6 @@ func collisionRectRect(r1, r2 *RectangleShape) *Vector {
 	} else {
 		dx = r2.Pos.X + r2.Width/2 - r1.Pos.X + r1.Width/2
 	}
-
 	if r1.Pos.Y < r2.Pos.Y {
 		dy = r2.Pos.Y - r2.Height/2 - r1.Pos.Y - r1.Height/2
 	} else {
@@ -176,36 +175,57 @@ func collisionRectRect(r1, r2 *RectangleShape) *Vector {
 	return &Vector{dx, dy}
 }
 
-// TODO
 func collisionRectCirc(r1 *RectangleShape, c1 *CircleShape) *Vector {
-	r1Left, r1Up, r1Right, r1Down := r1.GetBounds()
-	c1Left, c1Up, c1Right, c1Down := c1.GetBounds()
-
-	if !(((r1Right > c1Left && r1Right < c1Right) || (r1Left > c1Left && r1Left < c1Right) || (r1Left > c1Left && r1Right < c1Right) || (c1Left > r1Left && c1Right < r1Right)) &&
-		((r1Up < c1Down && r1Up > c1Up) || (r1Down < c1Down && r1Down > c1Up) || (r1Up > c1Up && r1Down < c1Down) || (c1Up > r1Up && c1Down < r1Down))) {
-
-		return &Vector{0, 0}
+	// Check bbox of circle
+	rr := collisionRectRect(
+		r1,
+		&RectangleShape{
+			Pos:    c1.Pos,
+			Width:  c1.Radius * 2,
+			Height: c1.Radius * 2,
+		})
+	if rr.Length() == 0 {
+		return rr
 	}
 
-	var dx, dy float64
-	if r1.Pos.X < c1.Pos.X {
-		dx = c1.Pos.X - c1.Radius - r1.Pos.X - r1.Width/2
-	} else {
-		dx = c1.Pos.X + c1.Radius - r1.Pos.X + r1.Width/2
+	// Get nearest corner, return if midpoint of c1 is inside rect
+	left, up, right, down := r1.GetBounds()
+	var co *Vector
+	if r1.Pos.X > c1.Pos.X { // left
+		if r1.Pos.Y > c1.Pos.Y { // top
+			if c1.Pos.X > left || c1.Pos.Y > up {
+				return rr
+			}
+			co = NewVector(left, up)
+		} else { // bottom
+			if c1.Pos.X > left || c1.Pos.Y < down {
+				return rr
+			}
+			co = NewVector(left, down)
+		}
+	} else { // right
+		if r1.Pos.Y > c1.Pos.Y { // top
+			if c1.Pos.X < right || c1.Pos.Y > up {
+				return rr
+			}
+			co = NewVector(right, up)
+		} else { // bottom
+			if c1.Pos.X < right || c1.Pos.Y < down {
+				return rr
+			}
+			co = NewVector(right, down)
+		}
 	}
 
-	if r1.Pos.Y < c1.Pos.Y {
-		dy = c1.Pos.Y - c1.Radius - r1.Pos.Y - r1.Height/2
-	} else {
-		dy = c1.Pos.Y + c1.Radius - r1.Pos.Y + r1.Height/2
-	}
+	// Resolve circle/point collision
+	cc := collisionCircCirc(
+		&CircleShape{
+			Pos:    co,
+			Radius: 0,
+		},
+		c1)
+	return cc
 
-	if math.Abs(dx) < math.Abs(dy) {
-		dy = 0
-	} else {
-		dx = 0
-	}
-	return &Vector{dx, dy}
 }
 
 func collisionCircCirc(c1, c2 *CircleShape) *Vector {
@@ -225,25 +245,34 @@ func (s *SpatialHash) CheckCollisions(shape Shape) []CollisionData {
 
 	switch typed := shape.(type) {
 	case *RectangleShape:
+
 		for _, candidate := range candidates {
+			var col *Vector
 			switch other := candidate.(type) {
 			case *RectangleShape:
-				collisions = append(collisions, CollisionData{Other: other, SeparatingVector: collisionRectRect(typed, other)})
+				col = collisionRectRect(typed, other)
 			case *CircleShape:
-				collisions = append(collisions, CollisionData{Other: other, SeparatingVector: collisionRectCirc(typed, other)})
+				col = collisionRectCirc(typed, other)
 			default:
 				// TODO error
+			}
+			if col != nil && col.Length() > 0 {
+				collisions = append(collisions, CollisionData{Other: candidate, SeparatingVector: col})
 			}
 		}
 	case *CircleShape:
 		for _, candidate := range candidates {
+			var col *Vector
 			switch other := candidate.(type) {
 			case *RectangleShape:
-				collisions = append(collisions, CollisionData{Other: other, SeparatingVector: collisionRectCirc(other, typed).Mult(-1)})
+				col = collisionRectCirc(other, typed).Mult(-1)
 			case *CircleShape:
-				collisions = append(collisions, CollisionData{Other: other, SeparatingVector: collisionCircCirc(typed, other)})
+				col = collisionCircCirc(typed, other)
 			default:
 				// TODO error
+			}
+			if col != nil && col.Length() > 0 {
+				collisions = append(collisions, CollisionData{Other: candidate, SeparatingVector: col})
 			}
 		}
 	default:
