@@ -18,7 +18,7 @@ var (
 
 // Shape interface. It's probably not needed but it keeps code more readable.
 type Shape interface {
-	GetPosition() *Point // get the position
+	GetPosition() *Vector // get the position
 	GetBounds() (float64, float64, float64, float64)
 	Move(x, y float64)      // move by amount
 	MoveTo(x, y float64)    // move to position
@@ -26,21 +26,10 @@ type Shape interface {
 	GetHash() *SpatialHash  // gets	 ref to hash
 }
 
-// Point is a point in space with X and Y positions
-type Point struct {
-	X, Y float64
-}
-
-// PointShape shape, also used for the hash's cell coordinates
-type PointShape struct {
-	Pos         *Point
-	SpatialHash *SpatialHash
-}
-
 // CircleShape shape
 type CircleShape struct {
 	// Center point
-	Pos         *Point
+	Pos         *Vector
 	Radius      float64
 	SpatialHash *SpatialHash
 }
@@ -48,7 +37,7 @@ type CircleShape struct {
 // RectangleShape shape
 type RectangleShape struct {
 	// Center point
-	Pos           *Point
+	Pos           *Vector
 	Width, Height float64
 	SpatialHash   *SpatialHash
 }
@@ -145,7 +134,33 @@ func (s *SpatialHash) GetCollisionCandidates(shape Shape) []Shape {
 // CollisionData contains information about the collision
 type CollisionData struct {
 	Other            Shape
-	SeparatingVector Point
+	SeparatingVector Vector
+}
+
+func collisionRectRect(r1, r2 *RectangleShape) Vector {
+	r1Left, r1Up, r1Right, r1Down := r1.GetBounds()
+	r2Left, r2Up, r2Right, r2Down := r2.GetBounds()
+
+	if !(((r1Right > r2Left && r1Right < r2Right) || (r1Left > r2Left && r1Left < r2Right)) &&
+		((r1Up < r2Down && r1Up > r2Up) || (r1Down < r2Down && r1Down > r2Up))) {
+
+		return Vector{0, 0}
+	}
+
+	var dx, dy float64
+	if r1.Pos.X < r2.Pos.X {
+		dx = r2.Pos.X - r2.Width/2 - r1.Pos.X - r1.Width/2
+	} else {
+		dx = r2.Pos.X + r2.Width/2 - r1.Pos.X + r1.Width/2
+	}
+
+	if r1.Pos.Y < r2.Pos.Y {
+		dy = r2.Pos.Y - r2.Height/2 - r1.Pos.Y - r1.Height/2
+	} else {
+		dy = r2.Pos.Y + r2.Height/2 - r1.Pos.Y + r1.Height/2
+	}
+
+	return Vector{dx, dy}
 }
 
 // CheckCollisions returns a list of all shapes and their separating vector
@@ -153,16 +168,20 @@ func (s *SpatialHash) CheckCollisions(shape Shape) []CollisionData {
 	collisions := make([]CollisionData, 0)
 	candidates := s.GetCollisionCandidates(shape)
 
-	for _, candidate := range candidates {
-		switch other := candidate.(type) {
-		case *PointShape:
-			_ = other
-		case *RectangleShape:
-		case *CircleShape:
-		default:
-			// TODO error
+	switch typed := shape.(type) {
+	case *RectangleShape:
+		for _, candidate := range candidates {
+			switch other := candidate.(type) {
+			case *RectangleShape:
+				collisions = append(collisions, CollisionData{Other: other, SeparatingVector: collisionRectRect(typed, other)})
+			case *CircleShape:
+			default:
+				// TODO error
+			}
 		}
-
+	case *CircleShape:
+	default:
+		// TODO error
 	}
 
 	return collisions
@@ -182,57 +201,10 @@ func (s *SpatialHash) Draw(surface *ebiten.Image) {
 	}
 }
 
-// NewPointShape creates, then adds a new PointShape to the hash before returning it
-func (s *SpatialHash) NewPointShape(x, y float64) *PointShape {
-	po := &PointShape{
-		Pos: &Point{x, y},
-	}
-	s.Add(po)
-	return po
-}
-
-// GetPosition returns the Point of the PointShape
-func (po *PointShape) GetPosition() *Point {
-	return po.Pos
-}
-
-// GetBounds returns the Bounds of the PointShape
-func (po *PointShape) GetBounds() (float64, float64, float64, float64) {
-	return po.Pos.X - 0.5, po.Pos.Y - 0.5, po.Pos.X + 0.5, po.Pos.Y + 0.5
-}
-
-// Move moves the PointShape by x and y
-func (po *PointShape) Move(x, y float64) {
-	po.Pos.X += x
-	po.Pos.Y += y
-	hash := po.GetHash()
-	hash.Remove(po)
-	hash.Add(po)
-}
-
-// MoveTo moves the PointShape to x and y
-func (po *PointShape) MoveTo(x, y float64) {
-	po.Pos.X = x
-	po.Pos.Y = y
-	hash := po.GetHash()
-	hash.Remove(po)
-	hash.Add(po)
-}
-
-// SetHash sets the hash
-func (po *PointShape) SetHash(s *SpatialHash) {
-	po.SpatialHash = s
-}
-
-// GetHash gets the hash
-func (po *PointShape) GetHash() *SpatialHash {
-	return po.SpatialHash
-}
-
 // NewCircleShape creates, then adds a new CircleShape to the hash before returning it
 func (s *SpatialHash) NewCircleShape(x, y, r float64) *CircleShape {
 	ci := &CircleShape{
-		Pos:    &Point{x, y},
+		Pos:    &Vector{x, y},
 		Radius: r,
 	}
 	s.Add(ci)
@@ -240,7 +212,7 @@ func (s *SpatialHash) NewCircleShape(x, y, r float64) *CircleShape {
 }
 
 // GetPosition returns the Point of the CircleShape
-func (ci *CircleShape) GetPosition() *Point {
+func (ci *CircleShape) GetPosition() *Vector {
 	return ci.Pos
 }
 
@@ -283,7 +255,7 @@ func (ci *CircleShape) GetHash() *SpatialHash {
 // NewRectangleShape creates, then adds a new RectangleShape to the hash before returning it
 func (s *SpatialHash) NewRectangleShape(x, y, w, h float64) *RectangleShape {
 	sq := &RectangleShape{
-		Pos:    &Point{x, y},
+		Pos:    &Vector{x, y},
 		Width:  w,
 		Height: h,
 	}
@@ -292,7 +264,7 @@ func (s *SpatialHash) NewRectangleShape(x, y, w, h float64) *RectangleShape {
 }
 
 // GetPosition returns the Point of the RectangleShape
-func (sq *RectangleShape) GetPosition() *Point {
+func (sq *RectangleShape) GetPosition() *Vector {
 	return sq.Pos
 }
 

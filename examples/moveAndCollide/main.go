@@ -5,6 +5,7 @@ import (
 	"errors"
 	"image/color"
 	"log"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -19,15 +20,16 @@ var (
 
 	player *Player
 	wall   *collider.RectangleShape
+	wall2  *collider.RectangleShape
 	hash   *collider.SpatialHash
-	cursor *collider.PointShape
+	cursor *collider.RectangleShape
 
 	ErrNormalExit = errors.New("Normal exit")
 )
 
 // Player is the moveable shape
 type Player struct {
-	Bounds *collider.CircleShape
+	Bounds *collider.RectangleShape
 	Speed  float64
 }
 
@@ -57,6 +59,16 @@ func (g *Game) Update() error {
 	cx, cy := ebiten.CursorPosition()
 	cursor.MoveTo(float64(cx), float64(cy))
 
+	for _, collision := range hash.CheckCollisions(player.Bounds) {
+		sep := collision.SeparatingVector
+		if math.Abs(sep.X) < math.Abs(sep.Y) {
+			player.Bounds.Move(sep.X, 0)
+		} else {
+			player.Bounds.Move(0, sep.Y)
+		}
+		// collision.Other.Move(sep.X/2, sep.Y/2)
+	}
+
 	return nil
 }
 
@@ -69,11 +81,19 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	green := color.RGBA{0, 255, 0, 128}
 	_ = green
 
-	ebitenutil.DrawCircle(
+	// ebitenutil.DrawCircle(
+	// 	screen,
+	// 	player.Bounds.Pos.X,
+	// 	player.Bounds.Pos.Y,
+	// 	player.Bounds.Radius,
+	// 	red)
+
+	ebitenutil.DrawRect(
 		screen,
-		player.Bounds.Pos.X,
-		player.Bounds.Pos.Y,
-		player.Bounds.Radius,
+		player.Bounds.Pos.X-player.Bounds.Width/2,
+		player.Bounds.Pos.Y-player.Bounds.Height/2,
+		player.Bounds.Width,
+		player.Bounds.Height,
 		red)
 
 	ebitenutil.DrawRect(
@@ -82,6 +102,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		wall.Pos.Y-wall.Height/2,
 		wall.Width,
 		wall.Height,
+		red)
+	ebitenutil.DrawRect(
+		screen,
+		wall2.Pos.X-wall2.Width/2,
+		wall2.Pos.Y-wall2.Height/2,
+		wall2.Width,
+		wall2.Height,
 		red)
 
 	ebitenutil.DrawCircle(
@@ -110,10 +137,10 @@ func main() {
 
 	hash = collider.NewSpatialHash(128)
 	player = &Player{
-		Bounds: hash.NewCircleShape(
+		Bounds: hash.NewRectangleShape(
 			float64(WindowWidth)/2-64/2,
 			float64(WindowHeight)/2-64/2,
-			32),
+			64, 64),
 		Speed: 5,
 	}
 
@@ -123,8 +150,14 @@ func main() {
 		32,
 		320,
 	)
+	wall2 = hash.NewRectangleShape(
+		float64(WindowWidth)/2-64/2-320,
+		float64(WindowHeight)/2-64/2,
+		320,
+		32,
+	)
 
-	cursor = hash.NewPointShape(0, 0)
+	cursor = hash.NewRectangleShape(0, 0, 1, 1)
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
