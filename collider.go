@@ -134,17 +134,17 @@ func (s *SpatialHash) GetCollisionCandidates(shape Shape) []Shape {
 // CollisionData contains information about the collision
 type CollisionData struct {
 	Other            Shape
-	SeparatingVector Vector
+	SeparatingVector *Vector
 }
 
-func collisionRectRect(r1, r2 *RectangleShape) Vector {
+func collisionRectRect(r1, r2 *RectangleShape) *Vector {
 	r1Left, r1Up, r1Right, r1Down := r1.GetBounds()
 	r2Left, r2Up, r2Right, r2Down := r2.GetBounds()
 
 	if !(((r1Right > r2Left && r1Right < r2Right) || (r1Left > r2Left && r1Left < r2Right) || (r1Left > r2Left && r1Right < r2Right) || (r2Left > r1Left && r2Right < r1Right)) &&
 		((r1Up < r2Down && r1Up > r2Up) || (r1Down < r2Down && r1Down > r2Up) || (r1Up > r2Up && r1Down < r2Down) || (r2Up > r1Up && r2Down < r1Down))) {
 
-		return Vector{0, 0}
+		return &Vector{0, 0}
 	}
 
 	var dx, dy float64
@@ -160,7 +160,54 @@ func collisionRectRect(r1, r2 *RectangleShape) Vector {
 		dy = r2.Pos.Y + r2.Height/2 - r1.Pos.Y + r1.Height/2
 	}
 
-	return Vector{dx, dy}
+	if math.Abs(dx) < math.Abs(dy) {
+		dy = 0
+	} else {
+		dx = 0
+	}
+	return &Vector{dx, dy}
+}
+
+// TODO
+func collisionRectCirc(r1 *RectangleShape, c1 *CircleShape) *Vector {
+	r1Left, r1Up, r1Right, r1Down := r1.GetBounds()
+	c1Left, c1Up, c1Right, c1Down := c1.GetBounds()
+
+	if !(((r1Right > c1Left && r1Right < c1Right) || (r1Left > c1Left && r1Left < c1Right) || (r1Left > c1Left && r1Right < c1Right) || (c1Left > r1Left && c1Right < r1Right)) &&
+		((r1Up < c1Down && r1Up > c1Up) || (r1Down < c1Down && r1Down > c1Up) || (r1Up > c1Up && r1Down < c1Down) || (c1Up > r1Up && c1Down < r1Down))) {
+
+		return &Vector{0, 0}
+	}
+
+	var dx, dy float64
+	if r1.Pos.X < c1.Pos.X {
+		dx = c1.Pos.X - c1.Radius - r1.Pos.X - r1.Width/2
+	} else {
+		dx = c1.Pos.X + c1.Radius - r1.Pos.X + r1.Width/2
+	}
+
+	if r1.Pos.Y < c1.Pos.Y {
+		dy = c1.Pos.Y - c1.Radius - r1.Pos.Y - r1.Height/2
+	} else {
+		dy = c1.Pos.Y + c1.Radius - r1.Pos.Y + r1.Height/2
+	}
+
+	if math.Abs(dx) < math.Abs(dy) {
+		dy = 0
+	} else {
+		dx = 0
+	}
+	return &Vector{dx, dy}
+}
+
+func collisionCircCirc(c1, c2 *CircleShape) *Vector {
+	dist := c1.Pos.Sub(c2.Pos)
+	depth := c1.Radius + c2.Radius - dist.Length()
+	if depth < 0 {
+		return &Vector{0, 0}
+	}
+
+	return dist.Normalize().Mult(depth)
 }
 
 // CheckCollisions returns a list of all shapes and their separating vector
@@ -175,11 +222,22 @@ func (s *SpatialHash) CheckCollisions(shape Shape) []CollisionData {
 			case *RectangleShape:
 				collisions = append(collisions, CollisionData{Other: other, SeparatingVector: collisionRectRect(typed, other)})
 			case *CircleShape:
+				collisions = append(collisions, CollisionData{Other: other, SeparatingVector: collisionRectCirc(typed, other)})
 			default:
 				// TODO error
 			}
 		}
 	case *CircleShape:
+		for _, candidate := range candidates {
+			switch other := candidate.(type) {
+			case *RectangleShape:
+				collisions = append(collisions, CollisionData{Other: other, SeparatingVector: collisionRectCirc(other, typed).Mult(-1)})
+			case *CircleShape:
+				collisions = append(collisions, CollisionData{Other: other, SeparatingVector: collisionCircCirc(typed, other)})
+			default:
+				// TODO error
+			}
+		}
 	default:
 		// TODO error
 	}

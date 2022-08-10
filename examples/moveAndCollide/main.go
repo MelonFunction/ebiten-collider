@@ -5,7 +5,6 @@ import (
 	"errors"
 	"image/color"
 	"log"
-	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -21,6 +20,8 @@ var (
 	player *Player
 	wall   *collider.RectangleShape
 	wall2  *collider.RectangleShape
+	obs    *collider.CircleShape
+	obs2   *collider.CircleShape
 	hash   *collider.SpatialHash
 	cursor *collider.RectangleShape
 
@@ -29,7 +30,7 @@ var (
 
 // Player is the moveable shape
 type Player struct {
-	Bounds *collider.RectangleShape
+	Bounds *collider.CircleShape
 	Speed  float64
 }
 
@@ -61,11 +62,7 @@ func (g *Game) Update() error {
 
 	for _, collision := range hash.CheckCollisions(player.Bounds) {
 		sep := collision.SeparatingVector
-		if math.Abs(sep.X) < math.Abs(sep.Y) {
-			player.Bounds.Move(sep.X, 0)
-		} else {
-			player.Bounds.Move(0, sep.Y)
-		}
+		player.Bounds.Move(sep.X, sep.Y)
 		// collision.Other.Move(sep.X/2, sep.Y/2)
 	}
 
@@ -81,19 +78,24 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	green := color.RGBA{0, 255, 0, 128}
 	_ = green
 
-	// ebitenutil.DrawCircle(
-	// 	screen,
-	// 	player.Bounds.Pos.X,
-	// 	player.Bounds.Pos.Y,
-	// 	player.Bounds.Radius,
-	// 	red)
-
-	ebitenutil.DrawRect(
+	ebitenutil.DrawCircle(
 		screen,
-		player.Bounds.Pos.X-player.Bounds.Width/2,
-		player.Bounds.Pos.Y-player.Bounds.Height/2,
-		player.Bounds.Width,
-		player.Bounds.Height,
+		player.Bounds.Pos.X,
+		player.Bounds.Pos.Y,
+		player.Bounds.Radius,
+		red)
+
+	ebitenutil.DrawCircle(
+		screen,
+		obs.Pos.X,
+		obs.Pos.Y,
+		obs.Radius,
+		red)
+	ebitenutil.DrawCircle(
+		screen,
+		obs2.Pos.X,
+		obs2.Pos.Y,
+		obs2.Radius,
 		red)
 
 	ebitenutil.DrawRect(
@@ -137,25 +139,34 @@ func main() {
 
 	hash = collider.NewSpatialHash(128)
 	player = &Player{
-		Bounds: hash.NewRectangleShape(
+		Bounds: hash.NewCircleShape(
 			float64(WindowWidth)/2-64/2,
 			float64(WindowHeight)/2-64/2,
-			64, 64),
+			32),
 		Speed: 5,
 	}
 
 	wall = hash.NewRectangleShape(
-		float64(WindowWidth)/2-64/2-96,
+		float64(WindowWidth)/2-64/2-128,
 		float64(WindowHeight)/2-64/2,
 		128,
 		320,
 	)
 	wall2 = hash.NewRectangleShape(
-		float64(WindowWidth)/2-64/2-320-65,
+		float64(WindowWidth)/2-64/2-320-128,
 		float64(WindowHeight)/2-64/2,
 		320,
 		128,
 	)
+
+	obs = hash.NewCircleShape(
+		float64(WindowWidth)/2-64/2+96,
+		float64(WindowHeight)/2-64/2+32,
+		32)
+	obs2 = hash.NewCircleShape(
+		float64(WindowWidth)/2-64/2+128,
+		float64(WindowHeight)/2-64/2+256,
+		64)
 
 	cursor = hash.NewRectangleShape(0, 0, 1, 1)
 
