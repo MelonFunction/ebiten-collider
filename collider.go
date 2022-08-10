@@ -42,6 +42,9 @@ type RectangleShape struct {
 	SpatialHash   *SpatialHash
 }
 
+// PointShape is a RectangleShape but with 0 width and height
+type PointShape struct{ *RectangleShape }
+
 // Cell contains shapes
 type Cell struct {
 	Shapes map[Shape]Shape
@@ -95,8 +98,13 @@ func (s *SpatialHash) Add(shape Shape) {
 			}
 			s.Hash[hashPos].Shapes[shape] = shape                        // add shape to cell
 			s.Backref[shape] = append(s.Backref[shape], s.Hash[hashPos]) // add cell to backref
+
+			if xStep == 0 || yStep == 0 {
+				goto done
+			}
 		}
 	}
+done:
 
 	shape.SetHash(s)
 }
@@ -312,52 +320,57 @@ func (ci *CircleShape) GetHash() *SpatialHash {
 
 // NewRectangleShape creates, then adds a new RectangleShape to the hash before returning it
 func (s *SpatialHash) NewRectangleShape(x, y, w, h float64) *RectangleShape {
-	sq := &RectangleShape{
+	re := &RectangleShape{
 		Pos:    &Vector{x, y},
 		Width:  w,
 		Height: h,
 	}
-	s.Add(sq)
-	return sq
+	s.Add(re)
+	return re
 }
 
 // GetPosition returns the Point of the RectangleShape
-func (sq *RectangleShape) GetPosition() *Vector {
-	return sq.Pos
+func (re *RectangleShape) GetPosition() *Vector {
+	return re.Pos
 }
 
 // GetBounds returns the Bounds of the RectangleShape
-func (sq *RectangleShape) GetBounds() (float64, float64, float64, float64) {
-	return sq.Pos.X - sq.Width/2,
-		sq.Pos.Y - sq.Height/2,
-		sq.Pos.X + sq.Width/2,
-		sq.Pos.Y + sq.Height/2
+func (re *RectangleShape) GetBounds() (float64, float64, float64, float64) {
+	return re.Pos.X - re.Width/2,
+		re.Pos.Y - re.Height/2,
+		re.Pos.X + re.Width/2,
+		re.Pos.Y + re.Height/2
 }
 
 // Move moves the RectangleShape by x and y
-func (sq *RectangleShape) Move(x, y float64) {
-	sq.Pos.X += x
-	sq.Pos.Y += y
-	hash := sq.GetHash()
-	hash.Remove(sq)
-	hash.Add(sq)
+func (re *RectangleShape) Move(x, y float64) {
+	re.Pos.X += x
+	re.Pos.Y += y
+	hash := re.GetHash()
+	hash.Remove(re)
+	hash.Add(re)
 }
 
 // MoveTo moves the RectangleShape to x and y
-func (sq *RectangleShape) MoveTo(x, y float64) {
-	sq.Pos.X = x
-	sq.Pos.Y = y
-	hash := sq.GetHash()
-	hash.Remove(sq)
-	hash.Add(sq)
+func (re *RectangleShape) MoveTo(x, y float64) {
+	re.Pos.X = x
+	re.Pos.Y = y
+	hash := re.GetHash()
+	hash.Remove(re)
+	hash.Add(re)
 }
 
 // SetHash sets the hash
-func (sq *RectangleShape) SetHash(s *SpatialHash) {
-	sq.SpatialHash = s
+func (re *RectangleShape) SetHash(s *SpatialHash) {
+	re.SpatialHash = s
 }
 
 // GetHash gets the hash
-func (sq *RectangleShape) GetHash() *SpatialHash {
-	return sq.SpatialHash
+func (re *RectangleShape) GetHash() *SpatialHash {
+	return re.SpatialHash
+}
+
+// NewPointShape creates, then adds a new RectangleShape to the hash before returning it
+func (s *SpatialHash) NewPointShape(x, y float64) *PointShape {
+	return &PointShape{s.NewRectangleShape(0, 0, 0, 0)}
 }

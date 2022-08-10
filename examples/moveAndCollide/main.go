@@ -23,7 +23,7 @@ var (
 	obs    *collider.CircleShape
 	obs2   *collider.CircleShape
 	hash   *collider.SpatialHash
-	cursor *collider.RectangleShape
+	cursor *collider.PointShape
 
 	ErrNormalExit = errors.New("Normal exit")
 )
@@ -168,7 +168,7 @@ func main() {
 		float64(WindowHeight)/2-64/2+256,
 		64)
 
-	cursor = hash.NewRectangleShape(0, 0, 1, 1)
+	cursor = hash.NewPointShape(0, 0)
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
