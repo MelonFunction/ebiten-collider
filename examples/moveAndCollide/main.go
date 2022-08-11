@@ -5,7 +5,6 @@ import (
 	"errors"
 	"image/color"
 	"log"
-	"sort"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -63,13 +62,11 @@ func (g *Game) Update() error {
 	cursor.MoveTo(float64(cx), float64(cy))
 
 	collisions := hash.CheckCollisions(player.Bounds)
-	sort.Slice(collisions, func(i, j int) bool {
-		return collisions[i].SeparatingVector.Length() > collisions[j].SeparatingVector.Length()
-	})
 	for _, collision := range collisions {
 		sep := collision.SeparatingVector
 		player.Bounds.Move(sep.X, sep.Y)
-		// collision.Other.Move(sep.X/2, sep.Y/2)
+		// player.Bounds.Move(sep.X/2, sep.Y/2)
+		// collision.Other.Move(-sep.X/2, -sep.Y/2)
 	}
 
 	return nil

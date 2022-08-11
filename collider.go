@@ -1,4 +1,4 @@
-// Package collider 👍
+// Package collider provides simple collision detection and resolution
 package collider
 
 import (
