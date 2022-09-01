@@ -129,16 +129,16 @@ func (s *SpatialHash) Remove(shape Shape) error {
 
 // GetCollisionCandidates returns a list of all shapes in the same cells as shape
 func (s *SpatialHash) GetCollisionCandidates(shape Shape) []Shape {
-	shapesMap := make(map[Shape]bool)
+	shapesMap := make(map[Shape]struct{})
 	if cells, ok := s.Backref[shape]; ok {
 		for _, cell := range cells {
 			for _, sh := range cell.Shapes {
-				shapesMap[sh] = true
+				shapesMap[sh] = struct{}{}
 			}
 		}
 	}
 	delete(shapesMap, shape)
-	shapes := make([]Shape, len(shapesMap))
+	shapes := make([]Shape, 0)
 	for k := range shapesMap {
 		shapes = append(shapes, k)
 	}
