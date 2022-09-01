@@ -121,7 +121,7 @@ func (s *SpatialHash) Remove(shape Shape) error {
 		for _, cell := range cells {
 			delete(cell.Shapes, shape)
 		}
-		s.Backref[shape] = nil
+		delete(s.Backref, shape)
 	}
 
 	return ErrShapeNotFound
