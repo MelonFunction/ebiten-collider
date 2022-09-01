@@ -65,6 +65,8 @@ func (g *Game) Update() error {
 	for _, collision := range collisions {
 		sep := collision.SeparatingVector
 		player.Bounds.Move(sep.X, sep.Y)
+
+		log.Println(collision.Other.GetParent())
 		// player.Bounds.Move(sep.X/2, sep.Y/2)
 		// collision.Other.Move(-sep.X/2, -sep.Y/2)
 	}
@@ -156,6 +158,7 @@ func main() {
 		// Bounds: hash.NewRectangleShape(x, y, 64, 64),
 		Speed: 1,
 	}
+	player.Bounds.SetParent("I'm the player")
 
 	wall = hash.NewRectangleShape(
 		x,
@@ -163,23 +166,28 @@ func main() {
 		128,
 		128,
 	)
+	wall.SetParent("Wall 1")
 	wall2 = hash.NewRectangleShape(
 		x+128,
 		y-16,
 		128,
 		128*2,
 	)
+	wall2.SetParent("Wall 2")
 
 	obs = hash.NewCircleShape(
 		x+96,
 		y+256+64,
 		32)
+	obs.SetParent("Circle 1")
 	obs2 = hash.NewCircleShape(
 		x+128,
 		y+256,
 		64)
+	obs2.SetParent("Circle 2")
 
 	cursor = hash.NewPointShape(0, 0)
+	cursor.SetParent("Cursor")
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

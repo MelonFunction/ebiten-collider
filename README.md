@@ -27,6 +27,15 @@ wall = hash.NewRectangleShape(
     128,
 )
 
+// Set arbitrary data. Useful for linking a shape to another struct.
+wall.SetParent("I'm a wall")
+// or...
+wall.SetParent(Tile{Type:"Wall"})
+// GetParent during a collision, check it's type and then change how the collision is handled. 
+// If it returns data which represents a wall, then you should move by the collision.SeparatingVector, but if it's a 
+// floor tile, then it can be ignored.
+log.Println(wall.GetParent())
+
 // Check for collisions
 collisions := hash.CheckCollisions(player)
 for _, collision := range collisions {

@@ -25,6 +25,9 @@ type Shape interface {
 	MoveTo(x, y float64)    // move to position
 	SetHash(s *SpatialHash) // sets ref to hash
 	GetHash() *SpatialHash  // gets	 ref to hash
+
+	SetParent(i interface{})
+	GetParent() interface{}
 }
 
 // CircleShape shape
@@ -33,6 +36,7 @@ type CircleShape struct {
 	Pos         *vector.Vector
 	Radius      float64
 	SpatialHash *SpatialHash
+	Parent      interface{}
 }
 
 // RectangleShape shape
@@ -41,6 +45,7 @@ type RectangleShape struct {
 	Pos           *vector.Vector
 	Width, Height float64
 	SpatialHash   *SpatialHash
+	Parent        interface{}
 }
 
 // PointShape is a RectangleShape but with 0 width and height
@@ -348,6 +353,16 @@ func (ci *CircleShape) GetHash() *SpatialHash {
 	return ci.SpatialHash
 }
 
+// SetParent sets the parent
+func (ci *CircleShape) SetParent(i interface{}) {
+	ci.Parent = i
+}
+
+// GetParent gets the parent
+func (ci *CircleShape) GetParent() interface{} {
+	return ci.Parent
+}
+
 // NewRectangleShape creates, then adds a new RectangleShape to the hash before returning it
 func (s *SpatialHash) NewRectangleShape(x, y, w, h float64) *RectangleShape {
 	re := &RectangleShape{
@@ -398,6 +413,16 @@ func (re *RectangleShape) SetHash(s *SpatialHash) {
 // GetHash gets the hash
 func (re *RectangleShape) GetHash() *SpatialHash {
 	return re.SpatialHash
+}
+
+// SetParent sets the parent
+func (re *RectangleShape) SetParent(i interface{}) {
+	re.Parent = i
+}
+
+// GetParent gets the parent
+func (re *RectangleShape) GetParent() interface{} {
+	return re.Parent
 }
 
 // NewPointShape creates, then adds a new RectangleShape to the hash before returning it
