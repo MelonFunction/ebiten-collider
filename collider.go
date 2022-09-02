@@ -87,11 +87,11 @@ func (s *SpatialHash) Add(shape Shape) {
 	// make sure big shapes are constrained properly
 	xStep := x2 - x1
 	if xStep > float64(s.CellSize) {
-		xStep = xStep / float64(s.CellSize)
+		xStep = float64(s.CellSize)
 	}
 	yStep := y2 - y1
 	if yStep > float64(s.CellSize) {
-		yStep = yStep / float64(s.CellSize)
+		yStep = float64(s.CellSize)
 	}
 	for x := x1; x <= x2; x += xStep {
 		for y := y1; y <= y2; y += yStep {
